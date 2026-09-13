@@ -26,6 +26,7 @@
       <el-table-column width="120" property="property" :label="_L['frontend.view.property']"></el-table-column>
       <el-table-column width="80" property="mode" :label="_L['system.schema.relation.kind']"></el-table-column>
       <el-table-column width="400" property="data" :label="_L['system.schema.relation.schema']"></el-table-column>
+      <el-table-column width="200" property="source" :label="_L['frontend.view.source']"></el-table-column>
     </el-table>
     <template #reference>
       <div class="schema-node-debug">
@@ -37,14 +38,14 @@
 </template>
 
 <script setup lang="ts">
-import { DataNode, getPropertyName, IProperty, isEmpty, RelationType, SCHEMA_KIND_NODE } from 'schema-node-core';
+import { DataNode, getPropertyName, IProperty, isEmpty, IValueAccess, RelationType, SCHEMA_KIND_NODE } from 'schema-node-core';
 import { nextTick, onMounted, ref, toRaw } from 'vue'
 import { _L } from '../utility/locale';
 import { ElPopover } from 'element-plus';
 
 const props = defineProps({ node: DataNode });
 const nodeProps = ref<{ name: string, value: any, source: string }[]>([])
-const nodeRelations = ref<{ property: string, mode: string, data: any }[]>([])
+const nodeRelations = ref<{ property: string, mode: string, data: any, source: string }[]>([])
 const access = ref<{ part: string, node?: DataNode }[]>()
 const popoverRef = ref<InstanceType<typeof ElPopover>>()
 
@@ -79,7 +80,17 @@ const show = async () => {
   result.sort((a, b) => a.name == 'name' ? -1 : b.name == 'name' ? 1 : a.name.localeCompare(b.name));
   nodeProps.value = result;
 
-  nodeRelations.value = Array.from(node.getAttachedRelations()).map(r => ({ property: getPropertyName(r.propertyCtor!), mode: (r as RelationType).kind, data: JSON.stringify((r as RelationType).schema[(r as RelationType).kind]) }));
+  nodeRelations.value = Array.from(node.getAttachedRelations())
+    .map(r => {
+      let source: IValueAccess | undefined = node
+      for (let i = 0; i < r.target.split('.').length; i++)
+        source = source?.parent;
+      return { 
+        property: getPropertyName(r.propertyCtor!), 
+        mode: (r as RelationType).kind, data: JSON.stringify((r as RelationType).schema[(r as RelationType).kind]),
+        source: source?.access || ''
+      };
+    });
 
   await nextTick();
   popoverRef.value?.popperRef?.popperInstanceRef?.update();

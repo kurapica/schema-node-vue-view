@@ -1,6 +1,6 @@
 <template>
   <section style="width: 100%;">
-    <el-table :data="rows" :span-method="spanMethod" style="width: 100%" v-bind="$attrs" :class="sortable ? 'swap-table' : ''" border>
+    <el-table ref="tableRef" :data="rows" :span-method="spanMethod" style="width: 100%" v-bind="$attrs" :class="sortable ? 'swap-table' : ''" border>
       <template v-for="col in state.columns.filter((v) => !v.invisible)" :key="col.prop">
         <!-- with sub cols -->
         <el-table-column v-if="col.subCols && col.subCols.length" :prop="col.prop" :label="col.label" :header-align="headerAlign">
@@ -268,11 +268,12 @@ const vOverflowTitle = {
 // sort
 let sortble: Sortable | null = null
 let sortbleTime = 0
+const tableRef = ref<any>()
 const regSortable = () => {
   sortble?.destroy()
   if (!node || node.readonly) return
 
-  const el: any = document.querySelector(".swap-table .el-table__body-wrapper tbody")
+  const el: any = tableRef.value?.$el.querySelector(".swap-table .el-table__body-wrapper tbody")
   if (!el) {
     sortbleTime = setTimeout(regSortable, 200)
     return
@@ -280,7 +281,6 @@ const regSortable = () => {
   sortble = Sortable.create(el, {
     draggable: ".el-table__row",
     onEnd(params: any) {
-      sortble?.destroy()
       let { oldIndex, newIndex } = params
       if (oldIndex === newIndex) return
       if (oldIndex == null || newIndex == null) return
@@ -349,13 +349,14 @@ onMounted(async () => {
   }));
 
   // sortable
-  if (props.sortable)
+  if (props.sortable && !state.readonly)
     regSortable();
 });
 
 onUnmounted(() => {
   subs.forEach((sub) => sub());
   clearDebounce(genRows);
+  clearTimeout(sortbleTime);
 });
 
 // columns

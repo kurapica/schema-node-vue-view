@@ -119,7 +119,7 @@ onMounted(async () => {
     if (props.type) {
       const type = await getNodeType(props.type) as ValueType
       if (abortController.signal.aborted) return
-      node = type?.create(props.modelValue) as DataNode
+      node = type?.create(props.modelValue ?? props.value) as DataNode
       if (node && props.props) {
         if (isRef(props.props) || isReactive(props.props)) {
           configWatcher = watch(props.props, () => {

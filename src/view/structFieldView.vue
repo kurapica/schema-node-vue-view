@@ -13,8 +13,8 @@
 </template>
 
 <script setup lang="ts">
-import { DataNode, StructNode } from 'schema-node-core'
-import { onMounted, onUnmounted, shallowRef, toRaw, useSlots } from 'vue'
+import { DataNode, IValueAccess, StructNode } from 'schema-node-core'
+import { nextTick, onMounted, onUnmounted, shallowRef, toRaw, useSlots } from 'vue'
 import schemaView from '../schemaView.vue'
 import { SchemaNodeFormType } from '../enum/formType'
 import { getSubNodeFormType } from '../schemaView'
@@ -47,22 +47,25 @@ const slotEntries = Object.entries(slots) as [string, (...args: any[]) => any][]
 
 const fldnode = shallowRef<DataNode | undefined>(node.getAccessValue(props.field) as DataNode)
 
-const subs: Function[] = []
+let sub: Function | undefined = undefined
+const onNext =  async (next: IValueAccess) => {
+  await nextTick();
+  fldnode.value = next as DataNode;
+  sub = fldnode.value?.subscribeMove(onNext);
+}
 
-onMounted(() => {
+onMounted(() => {  
   // When the field type is overrideable, the struct replaces the field node on
   // OverrideType changes (core's StructNode notifies subscribers when that happens).
   // Re-resolve the live field node by name on each struct notification.
   if (node.isFieldChangable(props.field)) {
-    subs.push(node.subscribe(() => {
-      const next = node.getAccessValue(props.field) as DataNode
-      if (next && next.id !== fldnode.value?.id) fldnode.value = next
-    }))
+    onNext(node.getAccessValue(props.field)!)
   }
 })
 
 onUnmounted(() => {
-  subs.forEach(sub => sub())
+  sub?.()
+  sub = undefined;
 })
 </script>
 

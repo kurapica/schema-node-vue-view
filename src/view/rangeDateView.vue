@@ -11,12 +11,12 @@
     :disabled-date="disabledDate"
     range-separator="~"
     :start-placeholder="_L(state.startFieldDisplay)"
-    :end-placeholder="_L(state.stopFieldDisplay)"
+    :end-placeholder="_L(state.endFieldDisplay)"
   ></el-date-picker>
   <div v-else style="display: flex; justify-content: space-between;">
     <schema-view :node="startField!" :readonly="readonly" :text="text"></schema-view>
     ~
-    <schema-view :node="stopField!" :readonly="readonly" :text="text"></schema-view>
+    <schema-view :node="endField!" :readonly="readonly" :text="text"></schema-view>
   </div>
 </template>
 
@@ -50,12 +50,13 @@ const props = defineProps<{
 
 const node = toRaw(props.node) as StructNode
 const startField = node.getAccessValue("start") as ScalarNode
-const stopField = node.getAccessValue("stop") as ScalarNode
+const endField = node.getAccessValue("end") as ScalarNode
 
 // ── UI State ──────────────────────────────────────────────────────
 
 /** UI State */
 const state = reactive<{
+  range?: [Date, Date],
   disable?: boolean,
   require?: boolean,
   readonly?: boolean,
@@ -63,20 +64,18 @@ const state = reactive<{
   changed?: boolean
   selectPlaceHolder?: string
   startFieldDisplay?: LocaleString | string
-  stopFieldDisplay?: LocaleString | string
+  endFieldDisplay?: LocaleString | string
 }>({
   startFieldDisplay: startField.getPropertyValue<LocaleString>(Display) ?? startField.name,
-  stopFieldDisplay: stopField.getPropertyValue<LocaleString>(Display) ?? stopField.name,
+  endFieldDisplay: endField.getPropertyValue<LocaleString>(Display) ?? endField.name,
 })
 
 // Data
 const data = computed({
-  get() {
-    const value: any = node.value
-    return [value?.start, value?.stop]
-  },
+  get() { return state.range },
   set(newValue) {
-    node.value = { start: newValue ? newValue[0] : null, stop: newValue ? newValue[1] : null }
+    startField.value = newValue?.[0]
+    endField.value = newValue?.[1]
   }
 })
 
@@ -113,7 +112,7 @@ const getDisplay = (field: DataNode | undefined): string => {
 }
 
 // gen display value
-const display = () =>`${getDisplay(startField)} ~ ${getDisplay(stopField)}`
+const display = () =>`${getDisplay(startField)} ~ ${getDisplay(endField)}`
 
 // check disabled date range
 const disabledDate = (time: Date) => {
@@ -121,8 +120,8 @@ const disabledDate = (time: Date) => {
 
   const startUpLimit = (startField as any)?.upLimit
   const startLowLimit = (startField as any)?.lowLimit
-  const stopUpLimit = (stopField as any)?.upLimit
-  const stopLowLimit = (stopField as any)?.lowLimit
+  const stopUpLimit = (endField as any)?.upLimit
+  const stopLowLimit = (endField as any)?.lowLimit
 
   return (startUpLimit instanceof Date && startUpLimit < time)
     || (startLowLimit instanceof Date && startLowLimit > time)
@@ -136,6 +135,7 @@ const subs: Function[] = [];
 
 onMounted(() => {
   subs.push(node.subscribe(() => {
+    state.range = [startField.value as Date, endField.value as Date]
     state.display = display()
     state.changed = node.changed
   }, true));
