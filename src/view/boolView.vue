@@ -1,16 +1,28 @@
 <template>
-  <section style="width: 100%;min-width: 120px;">
-    <el-switch
-      v-model="data"
+   <span v-if="text && state.readonly" 
+    :style="{'width': '100%', 'min-width': '120px', 'display': 'inline-block', 'text-align': text === true ? state.defaultAlign : text }">
+      {{ state.data ? _L['YES'] : _L['NO'] }}
+  </span>
+  <el-switch v-else-if="state.require || !isNull(state.default)"  
+  :style="{ 'width': '100%', 'text-align': text === true ? 'center' : text }"
+      v-model="data" 
       :disabled="state.readonly || state.disable"
-      active-color="#13ce66"
+      active-color="#13ce66" 
       inactive-color="#ff4949">
-    </el-switch>
-  </section>
+  </el-switch>
+  <el-select v-else 
+      v-model="data" 
+      style="width: 100%;" 
+      clearable
+      :placeholder="state.selectPlaceHolder"
+      :disabled="state.readonly || state.disable">
+      <el-option :label="_L['YES']" :value="true" />
+      <el-option :label="_L['NO']" :value="false" />
+  </el-select>
 </template>
 
 <script lang="ts" setup>
-import { DataNode, Default, Disable, isNull, IValueAccess, PropertyCtor, ReadOnly, Require } from 'schema-node-core'
+import { DataNode, Default, Disable, Display, formatLocaleString, isNull, IValueAccess, PropertyCtor, ReadOnly, Require, subscribeLanguage } from 'schema-node-core'
 import { computed, onMounted, onUnmounted, reactive, toRaw } from 'vue'
 import { _L } from '../utility/locale'
 import { subscribeAncestorProperty } from '../utility/toolset';
@@ -26,6 +38,7 @@ const props = defineProps<{
   /** Display readon only value as plain text */
   text?: boolean | 'left' | 'right' | 'center',
 
+  /** Debug mode */
   debug?: boolean
 }>()
 const node = toRaw(props.node)
@@ -38,6 +51,9 @@ const state = reactive<{
 
   /** Default align */
   defaultAlign?: 'left' | 'right' | 'center',
+
+  /** Select placeholder */
+  selectPlaceHolder?: string,
 
   /** Default value */
   default?: any
@@ -56,7 +72,7 @@ const state = reactive<{
 const data = computed({
   get(): any { return state.data },
   set(value: any) { 
-    if (value) {
+    if (!isNull(value)) {
       node.value = value
     }
     else if (state.require || !isNull(state.default)) {
@@ -74,7 +90,7 @@ const subs: Function[] = []
 
 onMounted(() => {
   subs.push(node.subscribe(() => {
-    state.data = node.value ?? false
+    state.data = isNull(node.value) ? null : node.value
   }, true))
   
   // state change
@@ -87,6 +103,11 @@ onMounted(() => {
   }
   subs.push(node.subscribeProperty(Default, (owner: IValueAccess, propCtor: PropertyCtor, newValue: any) => state.default = newValue as boolean, true))
   subs.push(node.subscribeProperty(Require, (owner: IValueAccess, propCtor: PropertyCtor, newValue: any) => state.require = newValue as boolean, true))
+
+  // display
+  subs.push(subscribeLanguage(async () => {
+    state.selectPlaceHolder = formatLocaleString("PLACEHOLDER_SELECT", node.getPropertyValue(Display) ?? node.name);
+  }, true));
 })
 
 onUnmounted(() => {

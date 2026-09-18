@@ -2,7 +2,7 @@
   <el-popover
     ref="popoverRef"
     placement="left"
-    width="800"
+    width="fit-content"
     trigger="hover"
     :onShow="show"
     :onHide="hide" :boundaries-padding="10">

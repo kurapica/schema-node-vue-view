@@ -396,8 +396,8 @@ const refreshColumns = async () => {
 
 // gen a column info from a struct field
 function genColumn(field: StructFieldType, skipSub?: boolean): IColumnInfo | null {
-  const display = field.getPropertyValue<LocaleString>(Display);
-  const unit = field.getPropertyValue<LocaleString>(Unit);
+  const display = field.getPropertyValue<LocaleString>(Display) ?? field.type?.getPropertyValue<LocaleString>(Display);
+  const unit = field.getPropertyValue<LocaleString>(Unit) ?? field.type?.getPropertyValue<LocaleString>(Unit);
   const column: IColumnInfo = {
     prop: field.name,
     display,
