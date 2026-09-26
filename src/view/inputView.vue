@@ -139,7 +139,7 @@ const state = reactive<{
 
 /** Data model */
 const data = computed({
-  get (): any { return state.data },
+  get (): any { return isNull(state.data) ? undefined : state.enableOptions ? `${state.data}` : state.data }, 
   set(value: any) { node.value = value }
 })
 
