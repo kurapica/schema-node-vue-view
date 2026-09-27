@@ -101,6 +101,7 @@ let updatevalue = false
 let timeOut: number | null = null
 let buildObserver: Function | null = null
 let subscribes: Function[] = []
+let selfCreatedNode: DataNode | null = null
 const abortController: AbortController = new AbortController()
 
 if (!props.node) {
@@ -120,6 +121,7 @@ onMounted(async () => {
       const type = await getNodeType(props.type) as ValueType
       if (abortController.signal.aborted) return
       node = type?.create(props.modelValue ?? props.value) as DataNode
+      selfCreatedNode = node || null
       if (node && props.props) {
         if (isRef(props.props) || isReactive(props.props)) {
           configWatcher = watch(props.props, () => {
@@ -153,9 +155,11 @@ onMounted(async () => {
         loaded.value = true
       }
       else {
-        while (!mask.value && !loaded.value)
+        while (!mask.value && !loaded.value) {
+          if (abortController.signal.aborted) return
           await new Promise(r => timeOut = setTimeout(r, 100))
-        if (loaded.value) return
+        }
+        if (loaded.value || abortController.signal.aborted) return
 
         observer = new IntersectionObserver(buildObserver as any, {
           rootMargin: "0px 0px 100px 0px",
@@ -218,9 +222,14 @@ onMounted(async () => {
 onUnmounted(() => {
   abortController.abort()
   loaded.value = true
+  observer?.disconnect()
+  observer = null
   subscribes.forEach((sub) => sub())
+  subscribes = []
   if (configWatcher) configWatcher.stop()
   if (timeOut) clearTimeout(timeOut)
+  selfCreatedNode?.dispose()
+  selfCreatedNode = null
 })
 
 </script>

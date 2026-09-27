@@ -1,4 +1,6 @@
+import { ElTable } from "element-plus";
 import { DataNode, debounce, isNull, OverrideType, Property, PropertyCtor, StructType } from "schema-node-core"
+import { onUnmounted, Ref } from "vue";
 
 const DEBOUNCE_DELAY = 50;
 
@@ -40,4 +42,10 @@ function ancestorPropertyValues<T>(node: DataNode, propCtor: PropertyCtor): T[] 
       curr = curr.parent instanceof DataNode ? curr.parent : null;
   }
   return values;
+}
+
+export function useElTableMemoryFix(tableRef: Ref<InstanceType<typeof ElTable> | null>) {
+  onUnmounted(() => {
+    tableRef.value?.$el?.dispatchEvent(new Event('resize'))
+  })
 }
