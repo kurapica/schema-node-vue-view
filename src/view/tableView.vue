@@ -138,7 +138,10 @@
 import {
   ArrayNode, ArrayType, DataNode, Display, InVisible, NS_SYSTEM_LOCALE_STRING,
   ReadOnly, StructNode, StructType, type StructFieldType, Unit, clearDebounce,
-  debounce, LocaleString, subscribeLanguage, MaxSize, MinSize, Disable
+  debounce, LocaleString, subscribeLanguage, MaxSize, MinSize, Disable,
+  Visible,
+  ARRAY_ELEMENT,
+  RelationType
 } from "schema-node-core";
 import { SchemaNodeFormType } from "../enum/formType";
 import { onMounted, onUnmounted, reactive, toRaw, shallowRef, nextTick, ref } from "vue";
@@ -361,6 +364,10 @@ onUnmounted(() => {
 
 // columns
 const refreshColumns = async () => {
+  // check array relations for hidden
+  const relations = Array.from((node.type as ArrayType).getRelations().filter(r => !r.hasDepends() && (r.propertyCtor == InVisible || r.propertyCtor == Visible)));
+
+  // check elements
   const elementType = (node.type as ArrayType).element as StructType | undefined;
   const columnInfos: IColumnInfo[] = [];
   let spanCols: { [key: number]: boolean } = {};
@@ -369,6 +376,13 @@ const refreshColumns = async () => {
   if (elementType) {
     for (const f of elementType.getFields()) {
       if (f.getPropertyValue<boolean>(InVisible)) continue;
+      const r = relations.find((r) => r.target.toLowerCase() == `${ARRAY_ELEMENT}.${f.name.toLowerCase()}`);
+      if (r instanceof RelationType){
+        const res = await r.processer!.process(node, node);
+        if (!res && r.propertyCtor == Visible) continue;
+        if (res && r.propertyCtor == InVisible) continue;
+      }
+
       if (props.viewColumns && !(props.viewColumns.includes(f.name) || props.viewColumns.some((c) => c.startsWith(`${f.name}.`)))) continue;
       const columnInfo = genColumn(f, false);
       if (!columnInfo) continue;
