@@ -3,7 +3,7 @@ export * from './utility/locale'
 export * from './utility/logger'
 export * from './utility/toolset'
 
-import { ArrayType, DataNode, EnumArrayNode, EnumType, EnumValueType, NS_SYSTEM_LOCALE_STRING, NS_SYSTEM_RANGE_DATE, NS_SYSTEM_RANGE_FULL_DATE, NS_SYSTEM_RANGE_MONTH, NS_SYSTEM_RANGE_YEAR, NS_SYSTEM_YEAR, SCHEMA_KIND_ARRAY, SCHEMA_KIND_BOOL, SCHEMA_KIND_DATE, SCHEMA_KIND_DECIMAL, SCHEMA_KIND_ENUM, SCHEMA_KIND_INT, SCHEMA_KIND_OBJECT, SCHEMA_KIND_STRING, SCHEMA_KIND_STRUCT, StructType } from 'schema-node-core'
+import { ArrayType, DataNode, EnumArrayNode, EnumType, EnumValueType, NS_SYSTEM_LOCALE_STRING, NS_SYSTEM_RANGE_DATE, NS_SYSTEM_RANGE_FULL_DATE, NS_SYSTEM_RANGE_MONTH, NS_SYSTEM_RANGE_YEAR, NS_SYSTEM_YEAR, NODE_KIND_ARRAY, NODE_KIND_BOOL, NODE_KIND_DATE, NODE_KIND_DECIMAL, NODE_KIND_ENUM, NODE_KIND_INT, NODE_KIND_OBJECT, NODE_KIND_STRING, NODE_KIND_STRUCT, StructType } from 'schema-node-core'
 
 import schemaView from './schemaView.vue'
 import arrayView from './view/arrayView.vue'
@@ -28,23 +28,23 @@ import { PageNode } from 'schema-node-app'
 export { SchemaNodeFormType, getSubNodeFormType }
 
 // base view
-regBaseSchemaKindView(SCHEMA_KIND_INT, inputView);
-regBaseSchemaKindView(SCHEMA_KIND_STRING, inputView);
-regBaseSchemaKindView(SCHEMA_KIND_DECIMAL, inputView);
-regBaseSchemaKindView(SCHEMA_KIND_ENUM, inputView, (node: DataNode, skin?: string) => {
+regBaseSchemaKindView(NODE_KIND_INT, inputView);
+regBaseSchemaKindView(NODE_KIND_STRING, inputView);
+regBaseSchemaKindView(NODE_KIND_DECIMAL, inputView);
+regBaseSchemaKindView(NODE_KIND_ENUM, inputView, (node: DataNode, skin?: string) => {
   if ((node.type as EnumType).type === EnumValueType.Flags) return flagsEnumView;
   return undefined;
 })
-regBaseSchemaKindView(SCHEMA_KIND_STRUCT, structView);
-regBaseSchemaKindView(SCHEMA_KIND_ARRAY, arrayView, (node: DataNode, skin?: string) => {
+regBaseSchemaKindView(NODE_KIND_STRUCT, structView);
+regBaseSchemaKindView(NODE_KIND_ARRAY, arrayView, (node: DataNode, skin?: string) => {
   if (node instanceof EnumArrayNode) return inputView;
   if (node instanceof PageNode) return pageTableView;
   if ((node.type as ArrayType).element instanceof StructType && !useSingleView((node.type as ArrayType).element!, skin)) return tableView;
   return undefined;
 })
-regBaseSchemaKindView(SCHEMA_KIND_OBJECT, anyView);
-regBaseSchemaKindView(SCHEMA_KIND_BOOL, boolView);
-regBaseSchemaKindView(SCHEMA_KIND_DATE, dateView);
+regBaseSchemaKindView(NODE_KIND_OBJECT, anyView);
+regBaseSchemaKindView(NODE_KIND_BOOL, boolView);
+regBaseSchemaKindView(NODE_KIND_DATE, dateView);
 
 // type view
 regSchemaTypeView(NS_SYSTEM_YEAR, yearView);

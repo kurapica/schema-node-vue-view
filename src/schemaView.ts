@@ -2,14 +2,14 @@ import {
   ArrayType,
   DataNode,
   IValueTypeAccess,
+  NODE_KIND_BOOL,
+  NODE_KIND_DATE,
+  NODE_KIND_DECIMAL,
+  NODE_KIND_ENUM,
+  NODE_KIND_INT,
+  NODE_KIND_STRING,
   ScalarType,
-  SCHEMA_KIND_ARRAY,
-  SCHEMA_KIND_BOOL,
-  SCHEMA_KIND_DATE,
-  SCHEMA_KIND_DECIMAL,
-  SCHEMA_KIND_ENUM,
-  SCHEMA_KIND_INT,
-  SCHEMA_KIND_STRING,
+  NODE_KIND_ARRAY,
   StructType,
 } from "schema-node-core";
 import { SchemaNodeFormType } from "./enum/formType";
@@ -24,12 +24,12 @@ const baseSchemaViews: {
 } = {};
 const schemaViews: { [key: string]: { [key: string]: any } } = {};
 const simpleType: string[] = [
-  SCHEMA_KIND_ENUM,
-  SCHEMA_KIND_INT,
-  SCHEMA_KIND_DECIMAL,
-  SCHEMA_KIND_BOOL,
-  SCHEMA_KIND_STRING,
-  SCHEMA_KIND_DATE,
+  NODE_KIND_ENUM,
+  NODE_KIND_INT,
+  NODE_KIND_DECIMAL,
+  NODE_KIND_BOOL,
+  NODE_KIND_STRING,
+  NODE_KIND_DATE,
 ];
 const singleView = new Set<string>();
 
@@ -65,7 +65,7 @@ export function getSubNodeFormType(
   skinName: string = DEFAULT_SKIN,
 ): SchemaNodeFormType {
   return useSingleView(node.type, skinName) ||
-    node.type.kind == SCHEMA_KIND_ARRAY
+    node.type.kind == NODE_KIND_ARRAY
     ? SchemaNodeFormType.Nest
     : type === SchemaNodeFormType.ExpandAll
       ? SchemaNodeFormType.ExpandAll

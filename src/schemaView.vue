@@ -10,7 +10,7 @@
       </template>
     </form-view>
     <template v-else-if="component">
-      <div v-if="debug && schemaNode.type.kind !== SCHEMA_KIND_STRUCT && schemaNode.type.kind !== SCHEMA_KIND_ARRAY" style="display: flex;width: 100%;">
+      <div v-if="debug && schemaNode.type.kind !== NODE_KIND_STRUCT && schemaNode.type.kind !== NODE_KIND_ARRAY" style="display: flex;width: 100%;">
         <debug-view :key="schemaNode.id" :node="schemaNode"/>
         <component :is="component" :key="schemaNode.id" :node="schemaNode" :debug="debug" :text="text" :readonly="readonly"
           v-bind="{ ...$attrs, ...(inFormType ? { 'in-form': inFormType } : {}) }">
@@ -35,7 +35,7 @@ import formView from './view/formView.vue'
 import { SchemaNodeFormType } from './enum/formType'
 import { getSchemaTypeView, useSingleView } from './schemaView'
 import { _L } from './utility/locale'
-import { DataNode, getNodeType, InVisible, IValueAccess, PropertyCtor, SCHEMA_KIND_ARRAY, SCHEMA_KIND_STRUCT, SCHEMA_KIND_STRUCT_FIELD, ValueType, Visible } from 'schema-node-core'
+import { DataNode, getNodeType, InVisible, IValueAccess, PropertyCtor, NODE_KIND_ARRAY, NODE_KIND_STRUCT, SCHEMA_KIND_NODE_STRUCT_FIELD, ValueType, Visible } from 'schema-node-core'
 import { AppNode, Loaded } from 'schema-node-app'
 import DebugView from './view/debugView.vue'
 
@@ -127,11 +127,11 @@ onMounted(async () => {
           configWatcher = watch(props.props, () => {
             const rawConfig = toRaw(props.props)
             if (!rawConfig) return
-            node?.setPropertyValues(rawConfig, undefined, SCHEMA_KIND_STRUCT_FIELD)
+            node?.setPropertyValues(rawConfig, undefined, SCHEMA_KIND_NODE_STRUCT_FIELD)
           })
         }
         else
-          node.setPropertyValues(toRaw(props.props), undefined, SCHEMA_KIND_STRUCT_FIELD)
+          node.setPropertyValues(toRaw(props.props), undefined, SCHEMA_KIND_NODE_STRUCT_FIELD)
       }
     }
   }

@@ -58,7 +58,7 @@
 </template>
 
 <script lang="ts" setup>
-import { AsSuggest, DataNode, Default, Disable, Display, Entry, getPropertyValue, isNull, LeafOnly, LocaleString, ReadOnly, Require, formatLocaleString, subscribeLanguage, ScalarNode, EntrySourceVersion, EntryAccess, useQueueQuery, SCHEMA_KIND_ARRAY, IValueAccess, PropertyCtor } from 'schema-node-core';
+import { AsSuggest, DataNode, Default, Disable, Display, Entry, getPropertyValue, isNull, LeafOnly, LocaleString, ReadOnly, Require, formatLocaleString, subscribeLanguage, ScalarNode, EntrySourceVersion, EntryAccess, useQueueQuery, NODE_KIND_ARRAY, IValueAccess, PropertyCtor } from 'schema-node-core';
 import { computed, onMounted, onUnmounted, reactive, shallowRef, toRaw, useSlots } from 'vue';
 import { _L } from '../utility/locale';
 import { subscribeAncestorProperty } from '../utility/toolset';
@@ -267,7 +267,7 @@ onMounted(async() => {
   subs.push(node.subscribe(async () => {
     state.data = node.rawValue;
     state.changed = node.changed;
-    state.multiple = node.type.kind === SCHEMA_KIND_ARRAY;
+    state.multiple = node.type.kind === NODE_KIND_ARRAY;
     state.defaultAlign = typeof(state.data) === 'number' ? 'right' : 'left';
 
     if (props.text) state.display = await node.getDisplayValue(' / ');
