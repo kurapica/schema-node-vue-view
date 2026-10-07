@@ -1,51 +1,77 @@
-export { regBaseSchemaTypeView, regSchemaTypeView } from './schemaView'
-export * from './locale'
+export { regBaseSchemaKindView, regSchemaTypeView } from './schemaView'
+export * from './utility/locale'
+export * from './utility/logger'
+export * from './utility/toolset'
 
-import { ArrayNode, NS_SYSTEM_BOOL, NS_SYSTEM_DATE, NS_SYSTEM_FULLDATE,  NS_SYSTEM_LOCALE_STRING,  NS_SYSTEM_OBJECT,  NS_SYSTEM_RANGEDATE, NS_SYSTEM_RANGEFULLDATE, NS_SYSTEM_RANGEMONTH, NS_SYSTEM_RANGEYEAR, NS_SYSTEM_YEAR, NS_SYSTEM_YEARMONTH, SchemaType } from 'schema-node'
+import { ArrayType, DataNode, EnumArrayNode, EnumType, EnumValueType, NS_SYSTEM_LOCALE_STRING, NS_SYSTEM_RANGE_DATE, NS_SYSTEM_RANGE_FULL_DATE, NS_SYSTEM_RANGE_MONTH, NS_SYSTEM_RANGE_YEAR, NS_SYSTEM_YEAR, NODE_KIND_ARRAY, NODE_KIND_BOOL, NODE_KIND_DATE, NODE_KIND_DECIMAL, NODE_KIND_ENUM, NODE_KIND_INT, NODE_KIND_OBJECT, NODE_KIND_STRING, NODE_KIND_STRUCT, StructType } from 'schema-node-core'
 
-import anyView from './components/anyView.vue'
-import schemaView from './components/schemaView.vue'
-import scalarView from './components/scalarView.vue'
-import boolView from './components/boolView.vue'
-import dateView from './components/dateView.vue'
-import enumView from './components/enumView.vue'
-import arrayView from './components/arrayView.vue'
-import structView from './components/structView.vue'
-import rangeDateView from './components/rangeDateView.vue'
-import tableView from './components/tableView.vue'
+import schemaView from './schemaView.vue'
+import arrayView from './view/arrayView.vue'
+import boolView from './view/boolView.vue'
+import dateView from './view/dateView.vue'
+import yearView from './view/yearView.vue'
+import flagsEnumView from './view/flagEnumView.vue'
+import inputView from './view/inputView.vue'
+import localeStringView from "./view/localeStringView.vue"
+import anyView from './view/objectView.vue'
+import rangeDateView from './view/rangeDateView.vue'
+import structFieldView from './view/structFieldView.vue'
+import structView from './view/structView.vue'
+import tableView from './view/tableView.vue'
+import pageTableView from './view/pageTableView.vue'
 import { type App } from 'vue'
-import { getSubNodeFormType, regBaseSchemaTypeView, regSchemaTypeView, useSingleView } from './schemaView'
-import structFieldView from './components/structFieldView.vue'
-import localstringView from "./components/localstringView.vue"
-import { SchemaNodeFormType } from './formType'
+import { getSubNodeFormType, regBaseSchemaKindView, regSchemaTypeView, useSingleView } from './schemaView'
 
-export { SchemaNodeFormType, schemaView, scalarView, boolView, dateView, enumView, arrayView, structView, rangeDateView, tableView, structFieldView, getSubNodeFormType }
+import { SchemaNodeFormType } from './enum/formType'
+import { PageNode } from 'schema-node-app'
+
+export { SchemaNodeFormType, getSubNodeFormType }
 
 // base view
-regBaseSchemaTypeView(SchemaType.Scalar, scalarView)
-regBaseSchemaTypeView(SchemaType.Enum, enumView)
-regBaseSchemaTypeView(SchemaType.Struct, structView)
-regBaseSchemaTypeView(SchemaType.Array, arrayView, (node: ArrayNode, skin: string) => {
-    if (node.elementSchema.type === SchemaType.Struct && !useSingleView(node.elementSchema, skin)) return tableView
+regBaseSchemaKindView(NODE_KIND_INT, inputView);
+regBaseSchemaKindView(NODE_KIND_STRING, inputView);
+regBaseSchemaKindView(NODE_KIND_DECIMAL, inputView);
+regBaseSchemaKindView(NODE_KIND_ENUM, inputView, (node: DataNode, skin?: string) => {
+  if ((node.type as EnumType).type === EnumValueType.Flags) return flagsEnumView;
+  return undefined;
 })
+regBaseSchemaKindView(NODE_KIND_STRUCT, structView);
+regBaseSchemaKindView(NODE_KIND_ARRAY, arrayView, (node: DataNode, skin?: string) => {
+  if (node instanceof EnumArrayNode) return inputView;
+  if (node instanceof PageNode) return pageTableView;
+  if ((node.type as ArrayType).element instanceof StructType && !useSingleView((node.type as ArrayType).element!, skin)) return tableView;
+  return undefined;
+})
+regBaseSchemaKindView(NODE_KIND_OBJECT, anyView);
+regBaseSchemaKindView(NODE_KIND_BOOL, boolView);
+regBaseSchemaKindView(NODE_KIND_DATE, dateView);
 
 // type view
-regSchemaTypeView(NS_SYSTEM_OBJECT, anyView)
-regSchemaTypeView(NS_SYSTEM_BOOL, boolView)
-regSchemaTypeView(NS_SYSTEM_YEAR, dateView)
-regSchemaTypeView(NS_SYSTEM_YEARMONTH, dateView)
-regSchemaTypeView(NS_SYSTEM_DATE, dateView)
-regSchemaTypeView(NS_SYSTEM_FULLDATE, dateView)
-regSchemaTypeView(NS_SYSTEM_RANGEYEAR, rangeDateView)
-regSchemaTypeView(NS_SYSTEM_RANGEMONTH, rangeDateView)
-regSchemaTypeView(NS_SYSTEM_RANGEDATE, rangeDateView)
-regSchemaTypeView(NS_SYSTEM_RANGEFULLDATE, rangeDateView)
-regSchemaTypeView(NS_SYSTEM_LOCALE_STRING, localstringView, undefined, true)
+regSchemaTypeView(NS_SYSTEM_YEAR, yearView);
+regSchemaTypeView(NS_SYSTEM_RANGE_YEAR, rangeDateView);
+regSchemaTypeView(NS_SYSTEM_RANGE_MONTH, rangeDateView);
+regSchemaTypeView(NS_SYSTEM_RANGE_DATE, rangeDateView);
+regSchemaTypeView(NS_SYSTEM_RANGE_FULL_DATE, rangeDateView);
+regSchemaTypeView(NS_SYSTEM_LOCALE_STRING, localeStringView, undefined, true);
 
 schemaView.install = (app: App): void => { 
-    app.component("SchemaView", schemaView)
-    app.component("StructFieldView", structFieldView)
+  app.component("SchemaView", schemaView);
+  app.component("StructFieldView", structFieldView);
 }
 
-// default
-// export default schemaView
+export {
+  schemaView,
+  arrayView,
+  boolView,
+  dateView,
+  yearView,
+  flagsEnumView,
+  inputView,
+  localeStringView,
+  anyView,
+  rangeDateView,
+  structFieldView,
+  structView,
+  tableView,
+  pageTableView,
+}

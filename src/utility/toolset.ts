@@ -1,0 +1,51 @@
+import { ElTable } from "element-plus";
+import { DataNode, debounce, isNull, OverrideType, Property, PropertyCtor, StructType } from "schema-node-core"
+import { onUnmounted, Ref } from "vue";
+
+const DEBOUNCE_DELAY = 50;
+
+/**
+ * Whether a struct field's type can be overridden at runtime.
+ * In the 3rd-refactor core, a field is changeable when the struct type declares
+ * an OverrideType relation targeting it.
+ */
+export function isFieldChangable(node: DataNode, fieldName: string): boolean {
+  const type = node.type as StructType
+  const fn = type?.getRelationsForField
+  if (!fn) return false
+  for (const rel of fn.call(type, fieldName)) {
+    if (rel.propertyCtor === OverrideType) return true
+  }
+  return false
+}
+
+/** Subscribe an ancestor property */
+export function subscribeAncestorProperty<T>(node: DataNode, propCtor: PropertyCtor, callback: (value: T[]) => void, immediate = false): Function {
+  const handler = () => callback(ancestorPropertyValues(node, propCtor)); 
+  const delayHandler = debounce(handler, DEBOUNCE_DELAY);
+  const subs: Function[] = [];
+  let curr: DataNode | null = node;
+  while (curr) {
+    subs.push(curr.subscribeProperty(propCtor, delayHandler));
+    curr = curr.parent instanceof DataNode ? curr.parent : null;
+  }
+  if (immediate) handler();
+  return () => subs.forEach(sub => sub());
+}
+
+function ancestorPropertyValues<T>(node: DataNode, propCtor: PropertyCtor): T[] {
+  let curr: DataNode | null = node;
+  const values: T[] = [];
+  while (curr) {
+      const value = curr.getPropertyValue<T>(propCtor);
+      if (!isNull(value)) values.push(value as T);
+      curr = curr.parent instanceof DataNode ? curr.parent : null;
+  }
+  return values;
+}
+
+export function useElTableMemoryFix(tableRef: Ref<InstanceType<typeof ElTable> | null>) {
+  onUnmounted(() => {
+    tableRef.value?.$el?.dispatchEvent(new Event('resize'))
+  })
+}
