@@ -33,8 +33,7 @@
     "sass-embedded": "^1.89.0",
     "sortablejs": "^1.15.7",
     "vite": "^6.3.2",
-    "vite-plugin-dts": "^4.5.4",
-    "vue-tsc": "^2.2.10"
+    "vite-plugin-dts": "^4.5.4"
   },
   "repository": {
     "type": "git",
