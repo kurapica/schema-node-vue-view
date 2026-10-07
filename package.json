@@ -1,6 +1,6 @@
 {
   "name": "schema-node-vue-view",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Reusable Vue 3 components for visualizing schema-node data using Element Plus.",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
@@ -47,14 +47,14 @@
   "exports": {
     ".": {
       "development": "./src/index.ts",
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.es.js",
       "require": "./dist/index.js"
     }
   },
   "dependencies": {
     "less": "^4.5.1",
-    "schema-node-app": "^2.0.1",
-    "schema-node-core": "^2.0.2"
+    "schema-node-app": "^2.0.2",
+    "schema-node-core": "^2.0.3"
   }
 }
