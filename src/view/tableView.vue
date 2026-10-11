@@ -57,7 +57,7 @@
             :label="_L('OPER')" align="center" width="100">
             <template #default="scope">
               <template v-if="scope.row.node.getAccessValue(col.prop)">
-                <a href="javascript:void(0)" style="color: lightseagreen"
+                <a href="javascript:void(0)" style="color: lightseagreen;margin-right: 4px"
                   v-if="!noSubAdd && (scope.row.node.getAccessValue(col.prop) as ArrayNode).length == scope.row.index"
                   @click="addRow(scope.row.node.getAccessValue(col.prop) as ArrayNode)">{{ _L('ADD') }}</a>
                 <a href="javascript:void(0)" style="color: red"
@@ -102,13 +102,13 @@
         :label="_L('OPER')" align="center" fixed="right" :width="operWidth || 100">
         <template #header>
           <a href="javascript:void(0)" v-if="state.addAble && !readonly && !state.readonly && state.allowAdd"
-            @click="addRow(node)" style="text-decoration: underline; color: lightseagreen">{{ _L('ADD') }}</a>
+            @click="addRow(node)" style="text-decoration: underline; color: lightseagreen;margin-right: 4px;">{{ _L('ADD') }}</a>
           <p v-else>{{ _L('OPER') }}</p>
         </template>
         <template #default="scope" v-if="$slots.operator || state.allowDel || state.viewEdit">
           <slot name="operator" :row="scope.row.node" :index="scope.row.eleIdx">
             <template v-if="state.viewEdit">
-              <a href="javascript:void(0)" @click="openRowEditor(scope.row.node)">{{ state.delAble && !state.readonly ? _L('EDIT') : _L('VIEW') }}</a>
+              <a href="javascript:void(0)" style="margin-right:4px" @click="openRowEditor(scope.row.node)">{{ state.delAble && !state.readonly ? _L('EDIT') : _L('VIEW') }}</a>
             </template>
             <a v-if="state.delAble && !state.readonly" href="javascript:void(0)" @click="delRow(node, scope.row.eleIdx)">{{ _L('DEL') }}</a>
           </slot>
