@@ -36,7 +36,8 @@ import { SchemaNodeFormType } from './enum/formType'
 import { getSchemaTypeView, useSingleView } from './schemaView'
 import { _L } from './utility/locale'
 import { DataNode, getNodeType, InVisible, IValueAccess, PropertyCtor, NODE_KIND_ARRAY, NODE_KIND_STRUCT, SCHEMA_KIND_NODE_STRUCT_FIELD, ValueType, Visible } from 'schema-node-core'
-import { AppNode, Loaded } from 'schema-node-app'
+import type { AppNode } from 'schema-node-app'
+import { loadSchemaNodeApp } from './utility/optionalApp'
 import DebugView from './view/debugView.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -137,41 +138,51 @@ onMounted(async () => {
   }
   if (!node) return
 
-  // check if the node is the root node
-  if (node.parent instanceof AppNode) {
-    const root = typeof (props.rootDiv) === "string" ? document.querySelector(props.rootDiv) : props.rootDiv
-    buildObserver = async ([entry]: any) => {
-      if (abortController.signal.aborted) return
-      observer?.disconnect()
-      observer = null;
+  // probe the optional schema-node-app module (app views resolve after this)
+  const appModule = await loadSchemaNodeApp()
+  if (abortController.signal.aborted) return
 
-      if (node?.getPropertyValue<boolean>(Loaded) ?? false) {
-        loaded.value = true
-        return
-      }
+  // check if the node is the root node (lazy load requires schema-node-app)
+  if (appModule) {
+    const { AppNode: AppNodeCtor, Loaded: LoadedCtor } = appModule
+    if (node.parent instanceof AppNodeCtor) {
+      const root = typeof (props.rootDiv) === "string" ? document.querySelector(props.rootDiv) : props.rootDiv
+      buildObserver = async ([entry]: any) => {
+        if (abortController.signal.aborted) return
+        observer?.disconnect()
+        observer = null;
 
-      if (entry && entry.isIntersecting && node?.visible) {
-        await (node!.parent as AppNode).reload([node!], true)
-        loaded.value = true
-      }
-      else {
-        while (!mask.value && !loaded.value) {
-          if (abortController.signal.aborted) return
-          await new Promise(r => timeOut = setTimeout(r, 100))
+        if (node?.getPropertyValue<boolean>(LoadedCtor) ?? false) {
+          loaded.value = true
+          return
         }
-        if (loaded.value || abortController.signal.aborted) return
 
-        observer = new IntersectionObserver(buildObserver as any, {
-          rootMargin: "0px 0px 100px 0px",
-          root,
-        })
-        observer.observe(mask.value)
+        if (entry && entry.isIntersecting && node?.visible) {
+          await (node!.parent as AppNode).reload([node!], true)
+          loaded.value = true
+        }
+        else {
+          while (!mask.value && !loaded.value) {
+            if (abortController.signal.aborted) return
+            await new Promise(r => timeOut = setTimeout(r, 100))
+          }
+          if (loaded.value || abortController.signal.aborted) return
+
+          observer = new IntersectionObserver(buildObserver as any, {
+            rootMargin: "0px 0px 100px 0px",
+            root,
+          })
+          observer.observe(mask.value)
+        }
       }
-    }
 
-    // check if the field is loaded
-    loaded.value = node?.getPropertyValue<boolean>(Loaded) ?? false;
-    if (!loaded.value) buildObserver([])
+      // check if the field is loaded
+      loaded.value = node?.getPropertyValue<boolean>(LoadedCtor) ?? false;
+      if (!loaded.value) buildObserver([])
+    }
+    else {
+      loaded.value = true
+    }
   }
   else {
     loaded.value = true
@@ -194,7 +205,7 @@ onMounted(async () => {
     updatevalue = true
     emit('update:modelValue', node.value)
     setTimeout(() => updatevalue = false, 20)
-    if (!loaded.value && node.getPropertyValue<boolean>(Loaded)) {
+    if (!loaded.value && appModule && node.getPropertyValue<boolean>(appModule.Loaded)) {
       loaded.value = true
     }
   }))
@@ -206,10 +217,10 @@ onMounted(async () => {
   subscribes.push(node.subscribeProperty(InVisible, () => invisible.value = !node.visible, true))
 
   // loaded change
-  if (node.parent instanceof AppNode) {
-    subscribes.push(node.subscribeProperty(Loaded, (owner: IValueAccess, propCtor: PropertyCtor, newValue: any, oldValue: any) => {
+  if (appModule && node.parent instanceof appModule.AppNode) {
+    subscribes.push(node.subscribeProperty(appModule.Loaded, (owner: IValueAccess, propCtor: PropertyCtor, newValue: any, oldValue: any) => {
       // Re-trigger lazy load if the field was unloaded externally (e.g. activeWorkflow reload)
-      if (loaded.value && node.parent instanceof AppNode && !newValue) {
+      if (loaded.value && node.parent instanceof appModule.AppNode && !newValue) {
         loaded.value = false
         buildObserver?.([])
       }

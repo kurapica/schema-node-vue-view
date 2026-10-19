@@ -146,7 +146,8 @@ import {
   RelationType,
   Visible,
 } from "schema-node-core";
-import { PageNode, type IArrayFieldFilter } from "schema-node-app";
+import type { PageNode } from "schema-node-app";
+import { loadSchemaNodeApp, type IArrayFieldFilter } from "../utility/optionalApp";
 import { SchemaNodeFormType } from "../enum/formType";
 import {
   onMounted, onUnmounted, reactive, toRaw, shallowRef, ref, computed, nextTick,
@@ -229,13 +230,14 @@ const currentLang = ref((navigator.language || "").toLowerCase());
 const tableRef = ref();
 const filterRef = ref();
 
-// Whether the node is a PageNode (supports pagination & filtering)
-const pageNode = node instanceof PageNode ? (node as PageNode) : undefined;
+// Whether the node is a PageNode (supports pagination & filtering),
+// resolved after probing the optional schema-node-app module
+const pageNodeRef = shallowRef<PageNode>();
 
 // Filter list (only for PageNode with filters initialized)
 const filters = computed<IArrayFieldFilter[]>(() => {
-  if (props.noFilter || !pageNode) return [];
-  return pageNode.filters || [];
+  if (props.noFilter || !pageNodeRef.value) return [];
+  return pageNodeRef.value.filters || [];
 });
 
 // Responsive columns per row for filter layout
@@ -316,11 +318,19 @@ const subs: Function[] = [];
 onMounted(async () => {
   window.addEventListener("resize", resizefunc);
 
+  // probe the optional schema-node-app module
+  const appModule = await loadSchemaNodeApp();
+  const PageNodeCtor = appModule?.PageNode;
+  const pageNode = PageNodeCtor && node instanceof PageNodeCtor ? (node as PageNode) : undefined;
+
   // init filters for PageNode
   if (pageNode && !props.noFilter) {
     await pageNode.initFilters();
     pageNode.enableAutoFilter(props.autoFilter ?? false);
   }
+
+  // expose after filters are ready so the filter bar renders in time
+  pageNodeRef.value = pageNode;
 
   await refreshColumns();
 
@@ -332,6 +342,7 @@ onMounted(async () => {
     state.delAble = node.delAble;
 
     // update pagination state for PageNode
+    const pageNode = pageNodeRef.value;
     if (pageNode) {
       state.page = pageNode.page;
       state.pageCount = pageNode.pageCount;
@@ -481,6 +492,7 @@ const addRow = (arrayNode: ArrayNode) => {
 const delRow = async (arrayNode: ArrayNode, index: number) => {
   const array = toRaw(arrayNode);
   const elements = Array.from(array.elements);
+  const pageNode = pageNodeRef.value;
   const isNew = !pageNode || !elements[index]?.changed;
 
   if (props.autoDel && !isNew) {
@@ -504,6 +516,7 @@ const delRow = async (arrayNode: ArrayNode, index: number) => {
 // resume a deleted row (PageNode only)
 const resumeRow = (arrayNode: ArrayNode, index: number) => {
   const array = toRaw(arrayNode);
+  const pageNode = pageNodeRef.value;
   if (pageNode) {
     pageNode.resumeRows(index, 1);
     const elements = Array.from(array.elements);
@@ -516,6 +529,7 @@ const resumeRow = (arrayNode: ArrayNode, index: number) => {
 
 // handle page change
 const handlePage = async (page: number) => {
+  const pageNode = pageNodeRef.value;
   if (!pageNode) return;
   await pageNode.setPage(page - 1);
   const elements = Array.from(node.elements);
@@ -524,11 +538,11 @@ const handlePage = async (page: number) => {
 
 // filter handlers
 const onResetFilter = () => {
-  pageNode?.resetFilter(true);
+  pageNodeRef.value?.resetFilter(true);
 };
 
 const onQueryFilter = () => {
-  pageNode?.processFilter();
+  pageNodeRef.value?.processFilter();
 };
 
 // filter expand handler

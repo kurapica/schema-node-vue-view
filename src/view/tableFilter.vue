@@ -27,7 +27,7 @@ import { ref, onMounted } from "vue";
 import { CaretBottom } from "@element-plus/icons-vue";
 import schemaView from "../schemaView.vue";
 import { _L } from "../utility/locale";
-import type { IArrayFieldFilter } from "schema-node-app";
+import type { IArrayFieldFilter } from "../utility/optionalApp";
 
 const props = defineProps<{
   /** The field filters with input nodes */
