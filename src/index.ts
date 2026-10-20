@@ -23,10 +23,7 @@ import { type App } from 'vue'
 import { getSubNodeFormType, regBaseSchemaKindView, regSchemaTypeView, useSingleView } from './schemaView'
 
 import { SchemaNodeFormType } from './enum/formType'
-import { loadSchemaNodeApp, getSchemaNodeApp } from './utility/optionalApp'
-
-// probe the optional schema-node-app early so app-related views can resolve
-loadSchemaNodeApp()
+import { PageNode } from 'schema-node-app'
 
 export { SchemaNodeFormType, getSubNodeFormType }
 
@@ -41,8 +38,7 @@ regBaseSchemaKindView(NODE_KIND_ENUM, inputView, (node: DataNode, skin?: string)
 regBaseSchemaKindView(NODE_KIND_STRUCT, structView);
 regBaseSchemaKindView(NODE_KIND_ARRAY, arrayView, (node: DataNode, skin?: string) => {
   if (node instanceof EnumArrayNode) return inputView;
-  const appModule = getSchemaNodeApp();
-  if (appModule && node instanceof appModule.PageNode) return pageTableView;
+  if (node instanceof PageNode) return pageTableView;
   if ((node.type as ArrayType).element instanceof StructType && !useSingleView((node.type as ArrayType).element!, skin)) return tableView;
   return undefined;
 })
